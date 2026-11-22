@@ -1,0 +1,17 @@
+# Internal documentation for developers and agents
+/docs/
+
+# Dependencies and build output
+node_modules/
+dist/
+
+# Environment and logs
+.env
+.env.*
+*.log
+
+# Editor and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
