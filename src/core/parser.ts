@@ -17,18 +17,19 @@ const ORDINAL = '\\d{1,2}(?:st|nd|rd|th)?';
 // Control phrases
 const SEP = '[\\s,.:;!?-]+';
 const JOURNAL = '(?:journals?|general|journey|jernal|jurnal|journel|chernel|journo|colonel|kernel)';
-const NOTE = '(?:notes?|node|no|knot|now|mode)';
+const WAKE_NOTE = '(?:notes?|node|no|knot|now|mode)';
+const CMD_NOTE = '(?:notes?|node)';
 
 export const WAKE_RE = new RegExp(
-  `\\b(?:(?:hey|hi|hay|hello|ok(?:ay)?)${SEP})?${JOURNAL}${SEP}(?:start(?:ed|s)?|star|begin|new|open)${SEP}(?:a\\s+)?(?:new\\s+)?${NOTE}\\b`,
+  `\\b(?:(?:hey|hi|hay|hello|ok(?:ay)?)${SEP})?${JOURNAL}${SEP}(?:start(?:ed|s)?|star|begin|new|open)${SEP}(?:a\\s+)?(?:new\\s+)?${WAKE_NOTE}\\b`,
   'i',
 );
 export const STOP_RE = new RegExp(
-  `\\b(?:save|saved|safe|finish|end|stop)${SEP}(?:the\\s+|this\\s+)?${NOTE}\\b`,
+  `\\b(?:save|saved|safe|finish|end|stop)${SEP}(?:the\\s+|this\\s+)?${CMD_NOTE}\\b`,
   'i',
 );
 export const CANCEL_RE = new RegExp(
-  `\\b(?:cancel|cancelled|discard)${SEP}(?:the\\s+|this\\s+)?${NOTE}\\b`,
+  `\\b(?:cancel|cancelled|discard)${SEP}(?:the\\s+|this\\s+)?${CMD_NOTE}\\b`,
   'i',
 );
 

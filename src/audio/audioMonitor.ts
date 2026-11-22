@@ -6,13 +6,21 @@ const CHIMES: Record<Chime, number[]> = {
   cancel: [440, 330],
 };
 
-// Keeps the microphone stream and AudioContext alive so the tab is never suspended,
-// and reports RMS levels from the audio thread, which is not subject to timer throttling.
+function audioConstraints(deviceId?: string): MediaTrackConstraints {
+  return {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+    ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+  };
+}
+
 export class AudioMonitor {
   onLevel?: (rms: number, time: number, pcm?: Float32Array) => void;
 
   private ctx: AudioContext | null = null;
   private stream: MediaStream | null = null;
+  private source: MediaStreamAudioSourceNode | null = null;
   private node: AudioWorkletNode | null = null;
 
   get now(): number {
@@ -23,11 +31,9 @@ export class AudioMonitor {
     return this.ctx !== null;
   }
 
-  async start(): Promise<void> {
+  async start(deviceId?: string): Promise<void> {
     if (this.ctx) return;
-    this.stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-    });
+    this.stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints(deviceId) });
     const ctx = new AudioContext();
     await ctx.audioWorklet.addModule(`${import.meta.env.BASE_URL}rms-processor.js`);
 
@@ -41,14 +47,27 @@ export class AudioMonitor {
 
     if (ctx.state === 'suspended') await ctx.resume();
     this.ctx = ctx;
+    this.source = source;
     this.node = node;
   }
 
+  async switchDevice(deviceId?: string): Promise<void> {
+    if (!this.ctx || !this.node) return;
+    const nextStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints(deviceId) });
+    this.source?.disconnect();
+    this.stream?.getTracks().forEach((t) => t.stop());
+    this.stream = nextStream;
+    this.source = this.ctx.createMediaStreamSource(nextStream);
+    this.source.connect(this.node);
+  }
+
   stop(): void {
+    this.source?.disconnect();
     this.node?.port.close();
     this.stream?.getTracks().forEach((t) => t.stop());
     void this.ctx?.close();
     this.ctx = null;
+    this.source = null;
     this.node = null;
     this.stream = null;
   }

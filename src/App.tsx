@@ -15,7 +15,7 @@ export default function App() {
           <h1 className="text-2xl font-semibold">Hands-Free Voice Journal</h1>
           <p className="text-sm text-slate-400">
             Say <span className="text-slate-200">"Hey Journal, start note"</span> to begin and{' '}
-            <span className="text-slate-200">"Save note"</span> or pause for 3 seconds to finish.
+            <span className="text-slate-200">"Save note"</span> or pause for 5 seconds to finish.
           </p>
         </div>
       </header>

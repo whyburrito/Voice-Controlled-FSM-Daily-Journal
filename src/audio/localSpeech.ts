@@ -1,9 +1,11 @@
+import { normalizePcm } from './wav';
+
 const SAMPLE_RATE = 16000;
 const PRE_ROLL_CHUNKS = 4;
 const PREVIEW_MIN_VOICE_FRAMES = 4;
 const PREVIEW_INTERVAL_SAMPLES = Math.round(SAMPLE_RATE * 1.4);
 const MAX_UTTERANCE_SAMPLES = SAMPLE_RATE * 12;
-const PAUSE_FRAMES = 6;
+const PAUSE_FRAMES = 11;
 const MIN_VOICE_FRAMES = 3;
 
 type WorkerOut =
@@ -102,7 +104,7 @@ export class LocalSpeechEngine {
         this.samples - this.lastPreviewSamples >= PREVIEW_INTERVAL_SAMPLES
       ) {
         this.lastPreviewSamples = this.samples;
-        this.sendPreview(mergeChunks(this.chunks, this.samples));
+        this.sendPreview(normalizePcm(mergeChunks(this.chunks, this.samples)));
       }
 
       if (this.samples >= MAX_UTTERANCE_SAMPLES) {
@@ -136,7 +138,7 @@ export class LocalSpeechEngine {
   private finalizeUtterance(): void {
     const audio =
       this.voiceFrames >= MIN_VOICE_FRAMES && this.samples > 0
-        ? mergeChunks(this.chunks, this.samples)
+        ? normalizePcm(mergeChunks(this.chunks, this.samples))
         : null;
     this.resetAudio();
     if (audio) {

@@ -4,7 +4,8 @@ import { CANCEL_RE, STOP_RE, WAKE_RE } from '../core/parser';
 const FATAL_ERRORS = new Set(['not-allowed', 'service-not-allowed', 'language-not-supported']);
 const IGNORED_ERRORS = new Set(['no-speech', 'aborted']);
 const MAX_ALTERNATIVES = 5;
-const RETRY_DELAY_MS = 1500;
+const IDLE_MAX_AGE_MS = 25000;
+const IDLE_QUIET_MS = 4000;
 
 function getCtor(): SpeechRecognitionCtor | undefined {
   return window.SpeechRecognition ?? window.webkitSpeechRecognition;
@@ -27,7 +28,9 @@ export class SpeechEngine {
 
   private rec: SpeechRecognitionInstance | null = null;
   private active = false;
-  private retryDelay = 0;
+  private startedAt = 0;
+  private lastResultAt = 0;
+  private errorCount = 0;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
 
   static supported(): boolean {
@@ -37,14 +40,18 @@ export class SpeechEngine {
   start(): void {
     if (!getCtor() || this.active) return;
     this.active = true;
-    this.retryDelay = 0;
+    this.errorCount = 0;
+    this.startedAt = 0;
+    this.lastResultAt = 0;
     this.clearTimer();
     this.spawn();
   }
 
   stop(): void {
     this.active = false;
-    this.retryDelay = 0;
+    this.errorCount = 0;
+    this.startedAt = 0;
+    this.lastResultAt = 0;
     this.clearTimer();
     const rec = this.rec;
     this.rec = null;
@@ -54,6 +61,19 @@ export class SpeechEngine {
       rec.onerror = null;
       rec.onend = null;
       rec.abort();
+    }
+  }
+
+  refreshIfIdle(): void {
+    if (!this.active || !this.rec || this.retryTimer) return;
+    const now = Date.now();
+    if (now - this.startedAt >= IDLE_MAX_AGE_MS && now - this.lastResultAt >= IDLE_QUIET_MS) {
+      this.startedAt = now;
+      try {
+        this.rec.stop();
+      } catch {
+        // Ignore if already stopping
+      }
     }
   }
 
@@ -68,7 +88,8 @@ export class SpeechEngine {
     rec.lang = SPEECH_LANG;
 
     rec.onresult = (e) => {
-      this.retryDelay = 0;
+      this.errorCount = 0;
+      this.lastResultAt = Date.now();
       this.onClearError?.();
       let final = '';
       let interim = '';
@@ -89,7 +110,7 @@ export class SpeechEngine {
         this.onError?.(`Speech recognition: ${e.error}`);
         return;
       }
-      this.retryDelay = RETRY_DELAY_MS;
+      this.errorCount += 1;
       this.onError?.(
         e.error === 'network'
           ? 'Speech service unreachable (network). Retrying automatically…'
@@ -100,18 +121,22 @@ export class SpeechEngine {
     rec.onend = () => {
       if (!this.active || this.rec !== rec) return;
       this.onRestart?.();
-      if (this.retryDelay === 0) {
+      if (this.errorCount === 0) {
         this.spawn();
+      } else if (this.errorCount === 1) {
+        this.scheduleSpawn(200);
       } else {
-        this.scheduleSpawn(this.retryDelay);
+        this.scheduleSpawn(Math.min(2000, 400 * this.errorCount));
       }
     };
 
     this.rec = rec;
+    this.startedAt = Date.now();
     try {
       rec.start();
     } catch {
-      this.scheduleSpawn(500);
+      this.errorCount += 1;
+      this.scheduleSpawn(Math.min(2000, 400 * this.errorCount));
     }
   }
 
