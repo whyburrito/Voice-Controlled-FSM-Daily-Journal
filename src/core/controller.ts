@@ -69,6 +69,7 @@ export class JournalController {
   private starting = false;
   private flushingSilence = false;
   private processToken = 0;
+  private activeNotice: Notification | null = null;
 
   private snap: Snapshot;
   private listeners = new Set<Listener>();
@@ -442,10 +443,10 @@ export class JournalController {
 
   private notify(title: string, body: string): void {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    new Notification(title, {
+    this.activeNotice?.close();
+    this.activeNotice = new Notification(title, {
       body: body.slice(0, 140),
-      tag: 'voice-journal-state',
-      silent: true,
+      tag: `voice-journal-${Date.now()}`,
     });
   }
 

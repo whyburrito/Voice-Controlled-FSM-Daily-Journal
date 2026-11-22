@@ -45,6 +45,7 @@ describe('parseEntry', () => {
     expect(e.dates).toEqual(expect.arrayContaining(['next friday', 'march 3rd']));
     expect(e.times).toEqual(['5pm']);
     expect(e.body).toContain('next friday');
+    expect(parseEntry('meet at 11.30pm').times).toEqual(['11.30pm']);
   });
 
   it('strips residual wake and stop phrases', () => {

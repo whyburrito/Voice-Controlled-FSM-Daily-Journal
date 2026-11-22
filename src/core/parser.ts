@@ -52,7 +52,7 @@ const DATE_RE = new RegExp(
   ].join('|'),
   'gi',
 );
-const TIME_RE = /\b\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)|\b(?:noon|midnight)\b/gi;
+const TIME_RE = /\b\d{1,2}(?:[:.]\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)|\b(?:noon|midnight)\b/gi;
 
 const unique = (xs: string[]) => [...new Set(xs)];
 

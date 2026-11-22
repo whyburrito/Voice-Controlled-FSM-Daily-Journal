@@ -6,8 +6,7 @@ const PAUSE_FRAMES = 7;
 const MIN_VOICE_FRAMES = 3;
 const MAX_UTTERANCE_SAMPLES = SAMPLE_RATE * 6;
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/audio/transcriptions';
-const WHISPER_PROMPT =
-  'Hey Journal, start note. Save note. Cancel note. Hashtag, tag as, priority high, medium, low.';
+const WHISPER_PROMPT = 'Hey Journal, start note. Save note. Cancel note.';
 const SOUND_TAG_RE = /\s*(?:\[[^\]]*\]|\([^)]*\))\s*/g;
 const HALLUCINATION_RE = /^(?:thank you\.?|thanks for watching!?|you\.?|.)$/i;
 
